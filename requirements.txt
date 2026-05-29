@@ -1,4 +1,2 @@
 requests
-twilio
 python-dotenv
-schedule

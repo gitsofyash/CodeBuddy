@@ -1,3 +1,3 @@
 @echo off
-cd /d "C:\path\to\your\project"
+cd /d "%~dp0"
 python main.py

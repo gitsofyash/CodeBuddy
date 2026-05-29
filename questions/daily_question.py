@@ -1,15 +1,14 @@
 import json
 import requests
 
+LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql"
+REQUEST_TIMEOUT_SECONDS = 15
 
-# Function to fetch the daily LeetCode question using GraphQL
-def fetch_daily_leetcode(difficulty="medium"):
+
+def fetch_daily_leetcode():
     """
-    Fetches the daily LeetCode question using GraphQL, with the option to filter by difficulty.
+    Fetches the daily LeetCode question using GraphQL.
     """
-    url = "https://leetcode.com/graphql"
-    
-    # GraphQL query to get daily question details
     query = """
     query questionOfToday {
         activeDailyCodingChallengeQuestion {
@@ -32,30 +31,32 @@ def fetch_daily_leetcode(difficulty="medium"):
     }
     """
     
-    # Headers to mimic browser request
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0"
     }
     
     try:
-        # Make the request
-        response = requests.post(url, json={'query': query}, headers=headers)
-        response.raise_for_status()  # Raise exception for bad status codes
+        response = requests.post(
+            LEETCODE_GRAPHQL_URL,
+            json={"query": query},
+            headers=headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
         
-        # Parse the response
         data = response.json()
-        question_data = data['data']['activeDailyCodingChallengeQuestion']
+        question_data = data["data"]["activeDailyCodingChallengeQuestion"]
+        slug = question_data["question"]["titleSlug"]
 
-        # Format the data
-        daily_question = {
-            'title': question_data['question']['title'],
-            'difficulty': question_data['question']['difficulty'],
-            'link': f"https://leetcode.com{question_data['link']}",
-            'acceptance_rate': question_data['question']['acRate']
+        return {
+            "title": question_data["question"]["title"],
+            "difficulty": question_data["question"]["difficulty"],
+            "link": f"https://leetcode.com{question_data['link']}",
+            "solution_link": f"https://leetcode.com/problems/{slug}/solutions/",
+            "discussion_link": f"https://leetcode.com/problems/{slug}/discuss/",
+            "acceptance_rate": question_data["question"]["acRate"],
         }
-        
-        return daily_question
         
     except requests.exceptions.RequestException as e:
         print(f"Error making request: {e}")
