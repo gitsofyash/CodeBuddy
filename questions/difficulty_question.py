@@ -1,25 +1,16 @@
 import random
-import requests
+
+from questions.leetcode_api import DIFFICULTY_LEVELS, fetch_problemset_questions, format_problem
 
 def fetch_leetcode_question(difficulty="easy"):
-    url = "https://leetcode.com/api/problems/all/"
-    response = requests.get(url)
-    if response.status_code == 200:
-        questions = response.json()["stat_status_pairs"]
-        difficulty_map = {"easy": 1, "medium": 2, "hard": 3}
-        filtered = [q for q in questions if q["difficulty"]["level"] == difficulty_map.get(difficulty.lower(), 1)]
+    try:
+        questions = fetch_problemset_questions()
+        difficulty_level = DIFFICULTY_LEVELS.get(difficulty.lower(), DIFFICULTY_LEVELS["easy"])
+        filtered = [q for q in questions if q["difficulty"]["level"] == difficulty_level]
+        if not filtered:
+            return f"No {difficulty} LeetCode questions found."
+
         question = random.choice(filtered)
-        title = question["stat"]["question__title"]
-        link = f"https://leetcode.com/problems/{question['stat']['question__title_slug']}/"
-        total_acs = question["stat"]["total_acs"]
-        total_submitted = question["stat"]["total_submitted"]
-        acceptance_rate = (total_acs / total_submitted * 100) if total_submitted > 0 else 0
-        
-        return {
-            'title': title,
-            'difficulty': difficulty.capitalize(),
-            'link': link,
-            'acceptance_rate': acceptance_rate
-        }
-    else:
+        return format_problem(question)
+    except Exception:
         return "Failed to fetch LeetCode questions."

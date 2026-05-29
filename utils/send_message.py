@@ -1,26 +1,30 @@
-from twilio.rest import Client
 import os
+
+import requests
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Twilio credentials
-ACCOUNT_SID = os.getenv('ACCOUNT_SID')
-AUTH_TOKEN = os.getenv('AUTH_TOKEN')
-WHATSAPP_NUMBER = os.getenv('WHATSAPP_NUMBER')
-YOUR_NUMBER = os.getenv('YOUR_NUMBER')
+NTFY_TOPIC = os.getenv("NTFY_TOPIC")
+NTFY_SERVER = os.getenv("NTFY_SERVER", "https://ntfy.sh")
+REQUEST_TIMEOUT_SECONDS = 15
 
-# Initialize Twilio client
-client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
-def send_whatsapp_message(message):
+def send_message(message):
     """
-    Sends a WhatsApp message using Twilio.
+    Sends a message using ntfy, a free push-notification service.
     """
-    msg = client.messages.create(
-        body=message,
-        from_=WHATSAPP_NUMBER,
-        to=YOUR_NUMBER
+    if not NTFY_TOPIC:
+        raise RuntimeError("Missing required environment variable: NTFY_TOPIC")
+
+    response = requests.post(
+        f"{NTFY_SERVER.rstrip('/')}/{NTFY_TOPIC}",
+        data=message.encode("utf-8"),
+        headers={
+            "Title": "CodeBuddy",
+            "Tags": "computer",
+        },
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
-    print(f"Message sent with SID: {msg.sid}")
+    response.raise_for_status()
+    print("Message sent successfully.")

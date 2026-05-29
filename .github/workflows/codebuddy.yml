@@ -1,0 +1,49 @@
+name: CodeBuddy Daily Notification
+
+on:
+  schedule:
+    # 10:00 AM IST = 04:30 UTC. For 12:00 PM IST, use: 30 6 * * *
+    - cron: "30 4 * * *"
+  workflow_dispatch:
+    inputs:
+      question_type:
+        description: "Question type to send"
+        required: true
+        default: "daily"
+        type: choice
+        options:
+          - daily
+          - random
+          - difficulty
+          - all
+
+jobs:
+  send-question:
+    runs-on: ubuntu-latest
+
+    env:
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      NTFY_SERVER: ${{ vars.NTFY_SERVER || 'https://ntfy.sh' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send LeetCode notification
+        shell: bash
+        run: |
+          QUESTION_TYPE="${{ github.event.inputs.question_type }}"
+          if [ -z "$QUESTION_TYPE" ]; then
+            QUESTION_TYPE="daily"
+          fi
+
+          python main.py --type "$QUESTION_TYPE"
